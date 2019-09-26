@@ -54,8 +54,11 @@ def main():
         # начинаем заполнять товар и его характеристики.
         for prod_img in prod_img_list:
             img_small = prod_img.find('img').get('src')
+            prod_categ = str(prod_img.find('a').get('onclick')).replace("dataLayer.push({'event': 'ecommerce','EnchE': 'productClick','ecommerce' : {'click': {'products': [",'').replace(']}}});', '').replace(' / ','///')
+            prod_categ_dict = eval(prod_categ)
             prod[i].update({
-                'img': img_small
+                'img': img_small,
+                'Категория': prod_categ_dict['category']
             })
             i += 1
 
