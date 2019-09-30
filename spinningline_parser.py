@@ -1,11 +1,16 @@
+import sys
 from bs4 import BeautifulSoup
-import xml
+import csv
+import os
 import urllib.request
 
 #функция для получения ссылок всех категорий в меню конкретной страницы
 def get_categ_urls(url, html):
-    categ_urls = ['https://spinningline.ru/primanki-blsny-c-38208_1.html?page=1&notstockcheck=true', 'https://spinningline.ru/primanki-voblery-c-38208_2.html']
+    categ_urls = []
+    for i in range(100):
+        categ_urls.append(f'https://spinningline.ru/primanki-blsny-c-38208_1.html?page={i+1}&notstockcheck=true')
     # !!!!!!!
+    print(categ_urls)
     return categ_urls
 
 #функция получения html из ссылки
@@ -17,9 +22,7 @@ def main():
     url = 'https://spinningline.ru/'
     html = get_html(url)
     categ_urls = get_categ_urls(url, html)
-    categ = []
-    prod = []
-    i = 0
+    prods_category = []
     # формируем словарь с характеристиками товака каждой категории
     for categ_url in categ_urls:
         categ_html = get_html(categ_url)
@@ -58,8 +61,20 @@ def main():
                 prod_property.update({
                     prop: val
                 })
+            prods_category.append(prod_property)
+        print(categ_url)
+        #создаем .csv файл
+    try:
+        csv_columns = prods_category[0].keys()
+        with open(f'{categ_name}.csv', 'w', encoding='utf-8-sig') as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=csv_columns, delimiter=";")
+            writer.writeheader()
+            for prod in prods_category:
+                writer.writerow(prod)
 
-            print (prod_property)
+    except Exception as e:
+        print(sys.exc_info())
+
 
 
 if __name__ == '__main__':
