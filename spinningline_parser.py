@@ -24,15 +24,8 @@ import urllib.request
 #     del urls[2]
 #     del urls[5]
 #     del urls[11]
-#     print(urls)
 
-    # for i in range(0):
-    #     categ_urls.append(f'https://spinningline.ru/primanki-blsny-c-38208_1.html?page={i+1}&notstockcheck=true')
-    # # !!!!!!!
-    # print(categ_urls)
-    # return main_urls_list
-
-#функция получения html из ссылки
+#функция получения html из ссылки для парсинга в BeautifulSoup
 def get_html(url):
     html = urllib.request.urlopen(url).read()
     return html
@@ -175,9 +168,9 @@ def main():
                   'https://spinningline.ru/e-lektronika-fonari-c-4436_27965.html?notstockcheck=true',
                   'https://spinningline.ru/e-lektronika-e-lementy-pitaniya-c-4436_174657.html?notstockcheck=true',
                   'https://spinningline.ru/e-lektronika-e-holoty-c-4436_4440.html?notstockcheck=true']
-    prods_category = []
-    # формируем словарь с характеристиками товака каждой категории
+    # в результате прохождения цикла получаем КСВ-файл со всеми товарами и их характеристик из категории и переходим к следующей категории
     for categ_url in categ_urls:
+        prods_category=[]
         categ_html = get_html(categ_url)
         soup = BeautifulSoup(categ_html, features="html.parser")
         categ_name = soup.find('h1', class_='b__hdr-big-text').text
@@ -185,10 +178,12 @@ def main():
             'Main_category': categ_name
         }
         categ_properties = soup.find_all('span', class_='b-sort__props-item__prop-name')
+        #в categ_property_dict получаем список всех характеристик товара из конкретной категории
         for categ_property in categ_properties:
             categ_property_dict.update({
                 BeautifulSoup(str(categ_property), features="html.parser").find('span').text: ''
             })
+        #получаем количество страниц в категории
         paggination = int(list(str(soup.find('div', class_='b-pager__info').text).split('из '))[1])
         if paggination % 20 == 0:
             paggination = paggination//25
@@ -196,12 +191,14 @@ def main():
             paggination = paggination//25+1
         print(paggination)
         print(categ_property_dict)
+        #в результате прохождения цикла получаем в prods_category список всех товаров категории и переходим на следующую странцу категории
         for i in range(paggination):
-            categ_url_pagg = categ_url[:-18]+f'page={i+1}&notstockcheck=true'
-            print(categ_url_pagg)
-            categ_html_pagg = get_html(categ_url_pagg)
+            categ_url_pagg = categ_url[:-18]+f'page={i+1}&notstockcheck=true'#добавляем в ссылку категории пагинацию
+            # print(categ_url_pagg)
+            categ_html_pagg = get_html(categ_url_pagg)#получаем html для каждой страницы в категории
             soup_categ = BeautifulSoup(categ_html_pagg, features="html.parser")
             prods = soup_categ.find_all('div', class_='b-prod')
+            # в результате прохождения цикла парсим один товар и переходим к парсигу следующего товара на странице категории добавляя в dict(prods_category) товары и хар-ки
             for prod in prods:
                 prod_name = prod.find('div', class_='b-prod__name').text.lstrip().rstrip()
                 prod_img = prod.find('img').get('src')
@@ -210,7 +207,7 @@ def main():
                 if prod.find('div', class_='b-prod__nostock') in prod.find('div', class_='b-prod__offer'):
                     prod_price = 0
                 else:
-                    prod_price = int(prod.find('span', class_='b-prod__price_red').text.replace(' ', ''))
+                    prod_price = int(prod.find('span', class_='b-prod__price_red').text.replace(' ', ''))#Почему цена - int? Нужно же float!
                 prod_props = prod.find_all('div', class_='b-prod-prop')
                 prod_property = categ_property_dict.copy()
                 prod_property.update({
@@ -228,7 +225,7 @@ def main():
                     })
                 prods_category.append(prod_property)
             # print(categ_url)
-            #создаем .csv файл
+        #создаем .csv файл для каждой категории
         try:
             csv_columns = prods_category[0].keys()
             with open(f'{categ_name}.csv', 'w', encoding='utf-8-sig') as csv_file:
@@ -239,8 +236,6 @@ def main():
 
         except Exception as e:
             print(sys.exc_info())
-        prods_category=[]
-
 
 
 if __name__ == '__main__':
