@@ -170,6 +170,7 @@ def main():
                   'https://spinningline.ru/e-lektronika-e-holoty-c-4436_4440.html?notstockcheck=true']
     # в результате прохождения цикла получаем КСВ-файл со всеми товарами и их характеристик из категории и переходим к следующей категории
     for categ_url in categ_urls:
+        count = 0
         prods_category=[]
         categ_html = get_html(categ_url)
         soup = BeautifulSoup(categ_html, features="html.parser")
@@ -184,13 +185,13 @@ def main():
                 BeautifulSoup(str(categ_property), features="html.parser").find('span').text: ''
             })
         #получаем количество страниц в категории
-        paggination = int(list(str(soup.find('div', class_='b-pager__info').text).split('из '))[1])
-        if paggination % 20 == 0:
-            paggination = paggination//25
+        paggination_all = int(list(str(soup.find('div', class_='b-pager__info').text).split('из '))[1])
+        if paggination_all % 20 == 0:
+            paggination = paggination_all//25
         else:
-            paggination = paggination//25+1
-        print(paggination)
-        print(categ_property_dict)
+            paggination = paggination_all//25+1
+        # print(paggination)
+        # print(categ_property_dict)
         #в результате прохождения цикла получаем в prods_category список всех товаров категории и переходим на следующую странцу категории
         for i in range(paggination):
             categ_url_pagg = categ_url[:-18]+f'page={i+1}&notstockcheck=true'#добавляем в ссылку категории пагинацию
@@ -200,8 +201,12 @@ def main():
             prods = soup_categ.find_all('div', class_='b-prod')
             # в результате прохождения цикла парсим один товар и переходим к парсигу следующего товара на странице категории добавляя в dict(prods_category) товары и хар-ки
             for prod in prods:
+                sys.stdout.write('\r')
+                sys.stdout.write(categ_name + ': ' + str(100 * count // paggination_all) + '%')
+                sys.stdout.flush()
                 prod_name = prod.find('div', class_='b-prod__name').text.lstrip().rstrip()
                 prod_img = prod.find('img').get('src')
+                prod_src = prod.find('a').get('href')
                 prod_manuf = prod.find('span', class_='b-prod__manufacturer-text').text
                 prod_categ = eval(str(prod.find('a').get('onclick')).replace("dataLayer.push({'event': 'ecommerce','EnchE': 'productClick','ecommerce' : {'click': {'products': [",'').replace(']}}});', '').replace(' / ', '///'))
                 if prod.find('div', class_='b-prod__nostock') in prod.find('div', class_='b-prod__offer'):
@@ -215,7 +220,8 @@ def main():
                     'Full_category': prod_categ.get('category'),
                     'img': prod_img,
                     'Производитель': prod_manuf,
-                    'price': prod_price
+                    'price': prod_price,
+                    'prod_src': 'https://spinningline.ru'+prod_src
                 })
                 for prod_prop in prod_props:
                     prop = prod_prop.find('span', class_='b-prod-prop__name').text
@@ -223,7 +229,12 @@ def main():
                     prod_property.update({
                         prop: val
                     })
+                prod_discr_html = get_html('https://spinningline.ru'+prod_src)
+                prod_discr = BeautifulSoup(prod_discr_html, features="html.parser").find('div', class_='product-description__text').text
+                print(prod_discr)
+                prod_property.update({'Описание': prod_discr})
                 prods_category.append(prod_property)
+                count += 1
             # print(categ_url)
         #создаем .csv файл для каждой категории
         try:
