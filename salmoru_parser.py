@@ -11,13 +11,12 @@ def get_html(url):
 
 def get_prettydisc(disc):
     disc = str(disc)
-    prettydisc = disc.replace('\n\n\n\n\n\n', '').replace('\n\n\n\n\n', '').replace('\n\n\n', ';').replace('• ', '. ').replace('\xa0','').replace('\n?','.').replace('\n', '').replace('..', '.').replace('  ', ' ').replace(' . ', '. ').split(';')
+    prettydisc = disc.replace('\n\n\n\n\n\n', '').replace('\n\n\n\n\n', '').replace('\n\n\n', ';').replace('• ', '. ').replace('\xa0','').replace('\n?','.').replace('\nК','. К').replace('\nВ','. В').replace('\n', '').replace('..', '.').replace('  ', ' ').replace(' . ', '. ').split(';')
     prettydisc[1] = prettydisc[1].split(':')[1:]
     prettydisc[2] = prettydisc[2].split(':')[1:]
     prettydisc[3] = prettydisc[3].split(':')[1:]
     prettydisc[4] = prettydisc[4].split(':')[1:]
     prettydisc[5] = prettydisc[5].replace('-', ';').replace(' ', '').split(';')[1:]
-        # replace('.\n\n', '.').replace('.\n', '.').replace('\n•', '.').replace('\n\n\n', ';').replace('  ', '').replace('\xa0', '').replace('\n', '').replace('•', '').replace('? ', '').split(';')
     return (prettydisc)
 
 def main():
@@ -31,6 +30,11 @@ def main():
         main_prop = soup.find_all('tr', class_='bgr-blue2')
         season = main_prop[0].text.lstrip().rstrip()
         categoty = main_prop[1].text.lstrip().rstrip()[6:]+'///'+main_prop[2].text.lstrip().rstrip()[9:]
+        if str(soup.find('td', class_='status-sklad').text.replace('	', '').replace('\n', '')) == 'нет на складе':
+            prod_sklad = 'N'
+        else:
+            prod_sklad = 'Y'
+        print(prod_sklad)
         prod_url = 'http://www.salmoru.com/'+soup.find('td', class_='b-top b-right bgr-white').find('a').get('href')
         prod_soup = BeautifulSoup(get_html(prod_url).text, features="html.parser")
         prod_name = prod_soup.find('div', class_='name').text
@@ -61,7 +65,7 @@ def main():
             'prod_country': prod_props[4],
             'prod_season': season,
             'prod_status': prod_props[5],
-            # 'prod_onstock': prod_onstock
+            'prod_sklad': prod_sklad
         })
         print(prod_property)
         i+=1
